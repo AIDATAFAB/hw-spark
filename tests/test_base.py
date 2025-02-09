@@ -42,7 +42,7 @@ def load_spark_tables(ss: pyspark.sql.SparkSession, schema: str, warehouse_path:
         for item in warehouse_path.glob('*'):
             table_name = schema + "." + item.name
             print("LOAD TABLE " + table_name)
-            ss.catalog.createTable(table_name, path=item.absolute().as_posix())
+            ss.catalog.createTable(table_name, path=item.absolute().as_posix(), source='delta')
 
 def test_baseline():
 
@@ -66,8 +66,6 @@ def test_baseline():
     # Baseline.prepare_data(ss)
 
     print("Prepare solution tables...")
-    ss.sql("USE SCHEMA " + Solution.SCHEMA).collect()
-
     start = timeit.default_timer()
     Solution.prepare_data(ss)
     end = timeit.default_timer()
@@ -159,14 +157,12 @@ def run_query_perf(ss: pyspark.sql.SparkSession, index: int, params: dict, itera
     solution_query = Solution.TESTS[index]
     solution_result = ss.sql(solution_query, **params)
 
-    ss.sql("USE SCHEMA " + Baseline.SCHEMA)
     start_dt = timeit.default_timer()
     baseline_result.write.format("noop").mode("overwrite").save()
     end_dt = timeit.default_timer()
     baseline_elapsed = (end_dt - start_dt)
     print("Baseline completed:", baseline_elapsed)
 
-    ss.sql("USE SCHEMA " + Solution.SCHEMA)
     start_dt = timeit.default_timer()
     solution_result.write.format("noop").mode("overwrite").save()
     end_dt = timeit.default_timer()
