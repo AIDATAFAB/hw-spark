@@ -119,7 +119,8 @@ def get_test_results(ss: pyspark.sql.SparkSession, num_of_iterations = DEFAULT_N
 
         test_results = []
 
-        run_data_check(ss, test_index, params)
+        if not run_data_check(ss, test_index, params):
+            raise RuntimeError("Data is not the same")
 
         for iteration in range(num_of_iterations):
             test_result = run_query_perf(ss, test_index, params, iteration)
@@ -140,10 +141,15 @@ def run_data_check(ss: pyspark.sql.SparkSession, index: int, params: dict):
     solution_result = ss.sql(solution_query, **params)
 
     cnt_baseline_minus_solution = baseline_result.exceptAll(solution_result.select(baseline_result.columns)).count()
-    assert cnt_baseline_minus_solution == 0, "Result is not the same"
-
     cnt_solution_minus_baseline = solution_result.select(baseline_result.columns).exceptAll(baseline_result).count()
-    assert cnt_solution_minus_baseline == 0, "Result is not the same"
+
+    if cnt_baseline_minus_solution != 0 or cnt_solution_minus_baseline != 0:
+        print('BASELINE MINUS SOLUTION:')
+        baseline_result.exceptAll(solution_result.select(baseline_result.columns)).show(truncate=False)
+
+        print('SOLUTION MINUS BASELINE:')
+        solution_result.select(baseline_result.columns).exceptAll(baseline_result).show(truncate=False)
+        return False
 
     print("TEST DATA: OK")
     return True
