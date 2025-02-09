@@ -15,14 +15,21 @@ class Baseline:
 
     TESTS = [
 """
-WITH report AS
+WITH movie_genres AS (
+    SELECT
+        DISTINCT
+        tconst,
+        explode(split(genres, ',')) AS genre        
+    FROM baseline.title_basics
+)
+,report AS
 (
 SELECT 
-    explode(split(genres, ',')) AS genre, 
+    genre, 
     CAST(numVotes AS INT) as numVotes, 
     CAST(averageRating AS DOUBLE) AS averageRating
-FROM title_basics
-JOIN title_ratings USING (tconst)
+FROM movie_genres
+JOIN baseline.title_ratings USING (tconst)
 )
 
 SELECT 
