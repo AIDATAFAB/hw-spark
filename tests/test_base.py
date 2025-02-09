@@ -123,8 +123,8 @@ def get_test_results(ss: pyspark.sql.SparkSession, num_of_iterations = DEFAULT_N
 
         run_data_check(ss, test_index, params)
 
-        for _ in range(num_of_iterations):
-            test_result = run_query_perf(ss, test_index, params)
+        for iteration in range(num_of_iterations):
+            test_result = run_query_perf(ss, test_index, params, iteration)
             print(test_result)
             test_results.append(test_result)            
 
@@ -150,8 +150,8 @@ def run_data_check(ss: pyspark.sql.SparkSession, index: int, params: dict):
     print("TEST DATA: OK")
     return True
 
-def run_query_perf(ss: pyspark.sql.SparkSession, index: int, params: dict):
-    print(f"TEST PERF: START ITERATION #{index}")
+def run_query_perf(ss: pyspark.sql.SparkSession, index: int, params: dict, iteration: int):
+    print(f"TEST PERF: TEST #{index} ITERATION #{iteration}")
 
     baseline_query = Baseline.TESTS[index]
     baseline_result = ss.sql(baseline_query, **params)
