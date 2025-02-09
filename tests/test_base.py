@@ -13,8 +13,11 @@ from delta import configure_spark_with_delta_pip
 from tests.baseline import Baseline
 
 from solution import Solution
-    
 
+SELF_PATH = Path(__file__) 
+SELF_DIR = SELF_PATH.parent
+
+DEFAULT_NUM_OF_ITERATIONS = 4
 RESULT_CONFIDENCE_INTERVAL = 0.1
 
 files = [
@@ -42,16 +45,18 @@ def load_spark_tables(ss: pyspark.sql.SparkSession, schema: str, warehouse_path:
             ss.catalog.createTable(table_name, path=item.absolute().as_posix())
 
 def test_baseline():
+
     builder = pyspark.sql.SparkSession.builder.appName("aig") \
         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
         .config("spark.ui.enabled", "false")
 
     ss = configure_spark_with_delta_pip(builder).getOrCreate()
+    ss.sparkContext.setLogLevel("ERROR")
 
     # loading existing tables
-    load_spark_tables(ss, Baseline.SCHEMA, Path('./tests/baseline-warehouse/baseline.db/'))
-    load_spark_tables(ss, Solution.SCHEMA, Path(f'./spark-warehouse/{Solution.SCHEMA}.db/'))
+    load_spark_tables(ss, Baseline.SCHEMA, SELF_DIR / 'baseline-warehouse' / 'baseline.db')
+    load_spark_tables(ss, Solution.SCHEMA, SELF_DIR.parent / 'spark-warehouse' / f'{Solution.SCHEMA}.db')
 
     # for file in files:
     #     table_name = file.replace('.tsv.gz', '').replace('.', '_')
@@ -73,20 +78,21 @@ def test_baseline():
 
     cnt_results_achieved  = 0
     for result in results:
-        print(result)
-
         min_baseline_elapsed = float('inf')
         min_solution_elapsed = float('inf')
 
         for iteration in result:
+            print(iteration)
             min_baseline_elapsed = min(min_baseline_elapsed, iteration['baseline_elapsed'])
             min_solution_elapsed = min(min_solution_elapsed, iteration['solution_elapsed'])
 
         print("min_baseline_elapsed:", min_baseline_elapsed)
         print("min_solution_elapsed:", min_solution_elapsed)
 
-        is_result_achieved = (1.0 - (min_solution_elapsed / min_baseline_elapsed)) > RESULT_CONFIDENCE_INTERVAL
-        if is_result_achieved:
+        is_time_result_achieved = (1.0 - (min_solution_elapsed / min_baseline_elapsed)) > RESULT_CONFIDENCE_INTERVAL
+
+        if is_time_result_achieved:
+            print("Result achieved!")
             cnt_results_achieved += 1
 
     cnt_results = len(results)
@@ -96,7 +102,7 @@ def test_baseline():
         
 
 
-def get_test_results(ss: pyspark.sql.SparkSession, num_of_iterations = 3):
+def get_test_results(ss: pyspark.sql.SparkSession, num_of_iterations = DEFAULT_NUM_OF_ITERATIONS):
     results = []
     for test_index in range(len(Baseline.TESTS)):
         print(f"TEST # {test_index}")
@@ -114,14 +120,39 @@ def get_test_results(ss: pyspark.sql.SparkSession, num_of_iterations = 3):
         print("Query parameters:", params)
 
         test_results = []
+
+        run_data_check(ss, test_index, params)
+
         for _ in range(num_of_iterations):
-            test_results.append(run_query_perf(ss, test_index, params))
+            test_result = run_query_perf(ss, test_index, params)
+            print(test_result)
+            test_results.append(test_result)            
 
         results.append(test_results)
 
     return results
 
+def run_data_check(ss: pyspark.sql.SparkSession, index: int, params: dict):
+    print("TEST DATA: START")
+
+    baseline_query = Baseline.TESTS[index]
+    baseline_result = ss.sql(baseline_query, **params)
+
+    solution_query = Solution.TESTS[index]
+    solution_result = ss.sql(solution_query, **params)
+
+    cnt_baseline_minus_solution = baseline_result.exceptAll(solution_result.select(baseline_result.columns)).count()
+    assert cnt_baseline_minus_solution == 0, "Result is not the same"
+
+    cnt_solution_minus_baseline = solution_result.select(baseline_result.columns).exceptAll(baseline_result).count()
+    assert cnt_solution_minus_baseline == 0, "Result is not the same"
+
+    print("TEST DATA: OK")
+    return True
+
 def run_query_perf(ss: pyspark.sql.SparkSession, index: int, params: dict):
+    print(f"TEST PERF: START ITERATION #{index}")
+
     baseline_query = Baseline.TESTS[index]
     baseline_result = ss.sql(baseline_query, **params)
 
@@ -142,15 +173,10 @@ def run_query_perf(ss: pyspark.sql.SparkSession, index: int, params: dict):
     solution_elapsed = (end_dt - start_dt)
     print("Solution completed:", solution_elapsed)
 
-    baseline_cnt_rows = baseline_result.count()
-    solution_cnt_rows = solution_result.count()
-
     result = {
         'test': index,
         'baseline_elapsed': baseline_elapsed,
-        'baseline_cnt_rows': baseline_cnt_rows, 
         'solution_elapsed': solution_elapsed,
-        'solution_cnt_rows': solution_cnt_rows,
         'baseline_query': baseline_query,
         'solution_query': solution_query,
         'params': params,
