@@ -3,5 +3,4 @@
 __pycache__
 .pytest_cache
 derby.log
-spark-warehouse/*
-!spark-warehouse/baseline_**
+spark-warehouse
