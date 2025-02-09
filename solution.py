@@ -12,7 +12,7 @@ class Solution:
 
     TESTS = [
 """
-WITH movie_genres AS (
+WITH title_genres AS (
     SELECT
         DISTINCT
         tconst,
@@ -22,17 +22,17 @@ WITH movie_genres AS (
 ,report AS
 (
 SELECT 
-    genre, 
+    TRIM(genre) AS genre, 
     CAST(numVotes AS INT) as numVotes, 
-    CAST(averageRating AS DOUBLE) AS averageRating
-FROM movie_genres
+    CAST(averageRating AS DECIMAL(38, 2)) AS averageRating
+FROM title_genres
 JOIN baseline.title_ratings USING (tconst)
 )
 
 SELECT 
     genre, 
     SUM(numVotes) AS numVotes, 
-    AVG(averageRating) AS averageRating
+    SUM(averageRating) AS SUM_averageRating
 FROM report 
 WHERE genre = {genre}
 GROUP BY genre
