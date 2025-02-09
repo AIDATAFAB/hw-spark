@@ -3,3 +3,4 @@
 __pycache__
 spark-warehouse
 .pytest_cache
+derby.log
