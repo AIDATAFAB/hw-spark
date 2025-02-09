@@ -5,10 +5,10 @@ from tests.baseline import Baseline
 class Solution:
     SCHEMA = 'solution'
 
-    # эти тесты тут для примера, для получения максимальной оценки необходимо написать свои запросы которые будут совпадать по результату с baseline
-    # запросы могут использовать любые таблицы, которые вы создадите, а не только 1:1 baseline.
-    # все запросы должны быть параметризированы как в Baseline.TESTS.
-    # новые запросы будут добавляться в первые две недели работы над ДЗ, следите за новостями в telegram группе!
+    # these tests are here as an example, to get the maximum score you need to write your own queries that will match the baseline in results
+    # queries can use any tables that you create, not just 1:1 baseline.
+    # all queries must be parameterized as in Baseline.TESTS.
+    # new queries will be added in the first two weeks of work on the homework, follow the news in the telegram group!
 
     TESTS = [
 """
@@ -34,9 +34,9 @@ GROUP BY genre
 
     @staticmethod
     def prepare_data(ss: SparkSession):
-        # вы можете создавать в вашей схеме solution любые таблицы.
-        # для получения максимальной оценки обязательно наличие комментариев по каждой оптимизации.
-        # в этом примере мы просто напрямую берем baseline, что, конечно, не приведет к хорошему результату и даже не побьет baseline более чем на 10%
+        # you can create any tables in your solution schema.
+        # to get the maximum score, it is necessary to have comments on each optimization.
+        # in this example, we just take the baseline directly, which, of course, will not lead to a good result and will not even beat the baseline by more than 10%
 
         for table_name in Baseline.TABLES:
             if not ss.catalog.tableExists(table_name):
