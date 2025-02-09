@@ -7,4 +7,6 @@ class Solution:
 
     @staticmethod
     def prepare_data(ss: SparkSession):
-        Baseline.prepare_data(ss, prefix="") # DELETE THIS LINE AND CREATE YOUR OWN SOLUTION
+        # WRITE YOUR INITIALIZATION CODE HERE
+        # USE baseline_* tables as a raw data and write to OTHER tables without baseline_ prefixes
+        pass

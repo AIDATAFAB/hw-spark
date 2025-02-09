@@ -26,7 +26,7 @@ def download_datasets():
         subprocess.run(["wget", "https://datasets.imdbws.com/" + file, "-nc", "-O", "/tmp/" + file])    
     
 def test_baseline():
-    download_datasets()
+    # download_datasets() # DO NOT CHANGE, ALL DATASETS ARE FIXED IN baseline_* tables
 
     builder = pyspark.sql.SparkSession.builder.appName("aig") \
         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
@@ -42,28 +42,28 @@ def test_baseline():
             print("LOAD TABLE " + item.name)
             ss.catalog.createTable(item.name, path=item.absolute().as_posix())
 
-    for file in files:
-        table_name = file.replace('.tsv.gz', '').replace('.', '_')
-        ss.read.csv("/tmp/" + file, sep='\t', nullValue='\\N').createOrReplaceTempView(table_name + "_csv")
+    # for file in files:
+    #     table_name = file.replace('.tsv.gz', '').replace('.', '_')
+    #     ss.read.csv("/tmp/" + file, sep='\t', nullValue='\\N').createOrReplaceTempView(table_name + "_csv")
 
     # prepare baseline tables
-    Baseline.prepare_data(ss)
+    # Baseline.prepare_data(ss)
 
     # prepare solution tables
     start = timeit.default_timer()
     Solution.prepare_data(ss)
     end = timeit.default_timer()
-    t = (end - start) / num_of_iterations
+    t = (end - start)
     print("Solution init time (sec):", t)
     
-    num_of_iterations = 1
 
     sum_t = 0
 
+    num_of_iterations = 1
     for i in range(num_of_iterations):
         for index, query in enumerate(Baseline.TESTS):
             print(query)
-            table_name = "baseline_result_" + str(index)
+            table_name = "result_baseline_" + str(index)
 
             if ss.catalog.tableExists(table_name):
                 ss.sql("DROP TABLE " + table_name)
