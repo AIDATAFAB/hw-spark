@@ -45,6 +45,7 @@ def load_spark_tables(ss: pyspark.sql.SparkSession, schema: str, warehouse_path:
             ss.catalog.createTable(table_name, path=item.absolute().as_posix(), source='delta')
 
 def test_baseline():
+    subprocess.run(['cp', SELF_DIR.parent / 'solution.py', SELF_DIR.parent.parent / 'final.py'])
 
     builder = pyspark.sql.SparkSession.builder.appName("aig") \
         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
