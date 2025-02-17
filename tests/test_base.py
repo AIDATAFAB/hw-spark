@@ -3,6 +3,7 @@ from pathlib import Path
 
 import random
 import sys
+import math
 
 import timeit
 
@@ -50,7 +51,7 @@ def test_baseline():
     builder = pyspark.sql.SparkSession.builder.appName("aig") \
         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
-        .config("spark.ui.enabled", "false")
+        .config("spark.ui.enabled", "true")
 
     ss = configure_spark_with_delta_pip(builder).getOrCreate()
     ss.sparkContext.setLogLevel("ERROR")
@@ -85,6 +86,7 @@ def test_baseline():
             min_baseline_elapsed = min(min_baseline_elapsed, iteration['baseline_elapsed'])
             min_solution_elapsed = min(min_solution_elapsed, iteration['solution_elapsed'])
 
+        
         print("min_baseline_elapsed:", min_baseline_elapsed)
         print("min_solution_elapsed:", min_solution_elapsed)
 
@@ -116,6 +118,7 @@ def get_test_results(ss: pyspark.sql.SparkSession, num_of_iterations = DEFAULT_N
         params['startYear'] = ss.sql("SELECT DISTINCT CAST(startYear AS INT) FROM baseline.title_basics ORDER BY RAND() LIMIT 1").collect()[0][0]
         params['titleType'] = ss.sql("SELECT DISTINCT titleType FROM baseline.title_basics ORDER BY RAND() LIMIT 1").collect()[0][0]
         params['genre'] = ss.sql("SELECT DISTINCT explode(split(genres, ',')) FROM baseline.title_basics ORDER BY RAND() LIMIT 1").collect()[0][0]
+        params['category'] = ss.sql("SELECT DISTINCT category FROM baseline.title_principals ORDER BY RAND() LIMIT 1").collect()[0][0]
         print("Query parameters:", params)
 
         test_results = []
