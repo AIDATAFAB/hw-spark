@@ -36,6 +36,22 @@ SELECT
 FROM report 
 WHERE genre = {genre}
 GROUP BY genre
+""",
+"""
+WITH known_for_titles
+AS 
+(
+SELECT
+    nb.nconst as nconst,
+    explode(split(nb.knownForTitles, ',')) as tconst
+FROM baseline.name_basics nb
+JOIN baseline.title_principals tp ON nb.nconst = tp.nconst
+WHERE tp.category = {category}
+)
+SELECT 
+    COUNT(DISTINCT kft.nconst) AS cnt_distinct_names
+FROM known_for_titles kft
+JOIN baseline.title_basics tb ON tb.tconst = kft.tconst AND tb.titleType = {titleType}
 """
     ]
 
