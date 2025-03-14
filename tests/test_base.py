@@ -43,7 +43,11 @@ def load_spark_tables(ss: pyspark.sql.SparkSession, schema: str, warehouse_path:
         for item in warehouse_path.glob('*'):
             table_name = schema + "." + item.name
             print("LOAD TABLE " + table_name)
-            ss.catalog.createTable(table_name, path=item.absolute().as_posix(), source='delta')
+            delta_folder = item / "_delta_log"
+            if delta_folder.exists():
+                ss.catalog.createTable(table_name, path=item.absolute().as_posix(), source='delta')
+            else:
+                ss.catalog.createTable(table_name, path=item.absolute().as_posix(), source='parquet')
 
 def test_baseline():
     subprocess.run(['cp', SELF_DIR.parent / 'solution.py', SELF_DIR.parent.parent / 'final.py'])
