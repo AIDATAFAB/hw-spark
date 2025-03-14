@@ -50,6 +50,14 @@ def load_spark_tables(ss: pyspark.sql.SparkSession, schema: str, warehouse_path:
                 ss.catalog.createTable(table_name, path=item.absolute().as_posix(), source='parquet')
 
 def test_baseline():
+    baseline_path = Path("/tmp/baseline-warehouse.tar.gz")
+    if not baseline_path.exists():
+        print("download data archive...")
+        subprocess.run(['curl', 'https://aidatafab.com/hse/baseline-warehouse.tar.gz', '-o', '/tmp/baseline-warehouse.tar.gz'])
+        subprocess.run(['rm', '-rf', str(SELF_DIR / 'baseline-warehouse')])
+        print("extract data files...")
+        subprocess.run(['tar', 'xzf', '/tmp/baseline-warehouse.tar.gz', '-C', str(SELF_DIR)])
+
     subprocess.run(['cp', SELF_DIR.parent / 'solution.py', SELF_DIR.parent.parent / 'final.py'])
 
     builder = pyspark.sql.SparkSession.builder.appName("aig") \
