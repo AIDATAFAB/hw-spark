@@ -51,10 +51,14 @@ def load_spark_tables(ss: pyspark.sql.SparkSession, schema: str, warehouse_path:
 
 def test_baseline():
     baseline_path = Path("/tmp/baseline-warehouse.tar.gz")
+    baseline_target_path = SELF_DIR / 'baseline-warehouse'
+
     if not baseline_path.exists():
         print("download data archive...")
         subprocess.run(['curl', 'https://aidatafab.com/hse/baseline-warehouse.tar.gz', '-o', '/tmp/baseline-warehouse.tar.gz'])
-        subprocess.run(['rm', '-rf', str(SELF_DIR / 'baseline-warehouse')])
+        subprocess.run(['rm', '-rf', str(baseline_target_path)])
+    
+    if not baseline_target_path.exists():
         print("extract data files...")
         subprocess.run(['tar', 'xzf', '/tmp/baseline-warehouse.tar.gz', '-C', str(SELF_DIR)])
 
@@ -69,7 +73,7 @@ def test_baseline():
     ss.sparkContext.setLogLevel("ERROR")
 
     # loading existing tables
-    load_spark_tables(ss, Baseline.SCHEMA, SELF_DIR / 'baseline-warehouse' / 'baseline.db')
+    load_spark_tables(ss, Baseline.SCHEMA, baseline_target_path / 'baseline.db')
     load_spark_tables(ss, Solution.SCHEMA, SELF_DIR.parent / 'spark-warehouse' / f'{Solution.SCHEMA}.db')
 
     # for file in files:
